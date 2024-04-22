@@ -1,0 +1,195 @@
+from flask import Flask, render_template, request, flash, redirect
+ 
+import numpy as np
+import sqlite3
+import hashlib
+import datetime
+import MySQLdb
+from flask import session
+from datetime import datetime
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.applications import VGG16
+from tensorflow.keras.layers import AveragePooling2D
+from tensorflow.keras.layers import Dropout
+from tensorflow.keras.layers import Flatten
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Input
+from tensorflow.keras.models import Model
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.utils import to_categorical
+from sklearn.preprocessing import LabelBinarizer
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report
+from sklearn.metrics import confusion_matrix
+from imutils import paths
+import matplotlib.pyplot as plt
+import numpy as np
+import argparse
+import cv2
+import os
+from tensorflow.keras.preprocessing import image
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.models import load_model
+from tensorflow.keras.preprocessing import image
+from tensorflow.keras.preprocessing.image import load_img, img_to_array 
+import joblib
+import pickle
+from sklearn.preprocessing import LabelEncoder 
+
+
+
+app = Flask(__name__)
+
+def predict(values, dic):
+   
+    return 0
+
+@app.route("/")
+def home():
+    return render_template('index.html')
+
+@app.route("/index.html")
+def home1():
+    return render_template('index.html')
+
+@app.route("/heart.html")
+def adminh():
+    return render_template("heart.html") 
+
+@app.route("/liver.html")
+def adminl():
+    return render_template("liver.html")   
+
+@app.route("/kidney.html")
+def admink1():
+
+    return render_template("kidney.html")  
+
+@app.route("/dr.html")
+def admind():
+    return render_template("dr.html") 
+
+@app.route("/bc.html")
+def adminb():
+    return render_template("bc.html") 
+
+@app.route("/cancer", methods=['GET', 'POST'])
+def cancerPage():
+    return render_template('breast_cancer.html')
+
+
+
+@app.route("/liver", methods=['GET', 'POST'])
+def liverPage():
+    Age = int(request.form['Age'])
+    Gender_Male = str(request.form['Gender_Male'])
+    Total_Bilirubin = float(request.form['Total_Bilirubin'])
+    Direct_Bilirubin = float(request.form['Direct_Bilirubin'])
+    Alkaline_Phosphotase = int(request.form['Alkaline_Phosphotase'])
+    Alamine_Aminotransferase = int(request.form['Alamine_Aminotransferase'])
+    Aspartate_Aminotransferase = int(request.form['Aspartate_Aminotransferase'])
+    Total_Protiens = float(request.form['Total_Protiens'])
+    Albumin = float(request.form['Albumin'])
+    Albumin_and_Globulin_Ratio = float(request.form['Albumin_and_Globulin_Ratio'])
+    vector = np.vectorize(np.float)
+    check = np.array([Age,Gender_Male,Total_Bilirubin,Direct_Bilirubin,Alkaline_Phosphotase,Alamine_Aminotransferase,Aspartate_Aminotransferase,Total_Protiens,Albumin,Albumin_and_Globulin_Ratio]).reshape(1, -1)
+
+    Labe=LabelEncoder()
+    check[:,1]=Labe.fit_transform(check[:,1])
+    model_path = os.path.join(os.path.dirname(__file__), 'liVERFCMODEL.sav')    
+    check = vector(check)
+    
+    #print(X_test[0:1])
+    #print(check[[0]] )
+    clf = joblib.load(model_path)
+    B_pred = clf.predict(check[[0]])
+    if B_pred == 2:
+        result="LIVER DISEASE DETECTED"
+        print("LIVER DISEASE DETECTED")
+    if B_pred == 1:
+        result="NO DISEASE DETECTED"
+        print("NO DISEASE DETECTED")
+     
+    return render_template('liver.html',data=result)
+
+@app.route("/dract", methods=['GET', 'POST'])
+def dract1():
+     
+    pic = request.form['pic']
+    classes = {0:"NO DR ",1:"MILD DR ",2:"MODERATE DR",3:"SEVERE DR",4:"PROLIFERATIVE DR"}
+ 
+    img_width, img_height = 224,224
+
+    # load the model we saved
+    model = load_model('diabetic.h5')
+    # predicting images    
+    image = load_img(pic,target_size=(224,224))
+    image = img_to_array(image)
+    image = image/255
+    image = np.expand_dims(image,axis=0)
+    result = np.argmax(model.predict(image))
+    print(result)     
+    prediction = classes[result]
+    print(prediction)    
+      
+    print(pic)
+    return render_template('dr.html', pic=pic,data=prediction)
+
+
+@app.route("/bcact", methods=['GET', 'POST'])
+def bcact1():
+
+    pic = request.form['pic']    
+    classes = {0:"EOSINOPHIL",1:"LYMPHOCYTE ",2:"MONOCYTE",3:"NEUTROPHIL"}
+ 
+    img_width, img_height = 224,224
+
+    # load the model we saved
+    model = load_model('cancer.h5')
+    # predicting images    
+    image = load_img(pic,target_size=(224,224))
+    image = img_to_array(image)
+    image = image/255
+    image = np.expand_dims(image,axis=0)
+    result = np.argmax(model.predict(image))
+    print(result)     
+    prediction = classes[result]
+    print(prediction)    
+      
+    print(pic) 
+    print(pic)
+    return render_template('bc.html', pic=pic,data=prediction)
+
+
+@app.route("/adelete")
+def adelete():
+    pic = request.args.get('pic')
+    return render_template("predict.html",m2="sucess",pic=pic)
+
+@app.route("/ad")
+def ad1():
+    pic = request.args.get('pic')
+    return render_template("predict1.html",m2="sucess",pic=pic)
+
+
+@app.route("/pneumonia", methods=['GET', 'POST'])
+def pneumoniaPage():
+    return render_template('pneumonia.html')
+
+@app.route("/predict", methods = ['POST', 'GET'])
+def predictPage():
+    
+    return render_template('predict.html')
+
+@app.route("/malariapredict", methods = ['POST', 'GET'])
+def malariapredictPage():
+    
+    return render_template('malaria_predict.html')
+
+@app.route("/pneumoniapredict", methods = ['POST', 'GET'])
+def pneumoniapredictPage():
+   
+    return render_template('pneumonia_predict.html')
+
+if __name__ == '__main__':
+	app.run(debug = True)
